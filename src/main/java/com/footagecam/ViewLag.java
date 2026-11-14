@@ -66,13 +66,22 @@ final class ViewLag {
         return camPitch;
     }
 
+    /** How far (degrees) the hands trail the camera sideways. Positive = hands are turned left of the camera. */
+    static float handOffsetYaw() {
+        float strength = Config.HAND_LAG_STRENGTH.get().floatValue();
+        return Mth.clamp(Mth.wrapDegrees(camYaw - handYaw) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
+    }
+
+    /** How far (degrees) the hands trail the camera up/down. Positive = hands are turned up from the camera. */
+    static float handOffsetPitch() {
+        float strength = Config.HAND_LAG_STRENGTH.get().floatValue();
+        return Mth.clamp((camPitch - handPitch) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
+    }
+
     /** Shifts the hand rendering so it trails behind the camera. */
     static void applyToHands(PoseStack poseStack) {
-        float strength = Config.HAND_LAG_STRENGTH.get().floatValue();
-        float dYaw = Mth.clamp(Mth.wrapDegrees(camYaw - handYaw) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
-        float dPitch = Mth.clamp((camPitch - handPitch) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
-        poseStack.mulPose(Axis.YP.rotationDegrees(dYaw));
-        poseStack.mulPose(Axis.XP.rotationDegrees(dPitch));
+        poseStack.mulPose(Axis.YP.rotationDegrees(handOffsetYaw()));
+        poseStack.mulPose(Axis.XP.rotationDegrees(handOffsetPitch()));
     }
 
     private static float amount(float s, float dt) {

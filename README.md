@@ -5,7 +5,9 @@ Found-footage style first person camera, taken from SP-Backrooms Revamped and re
 - **Tilt** - the camera rolls when you turn your head and when you strafe.
 - **Sway** - constant handheld wobble that gets stronger and faster while you move.
 - **Camera follow** - the picture trails your mouse a little and catches up.
-- **Hand lag** - hands and held items trail behind the camera and catch up a moment later.
+- **Idle sway** - slow cinematic sway while you stand still (like Camera Overhaul), fades out when you move.
+- **Hand lag** - hands, held items and TACZ guns trail behind the camera and catch up a moment later.
+- **TACZ shots follow the gun** - while holding a TACZ gun, bullets leave where the front of the (delayed) gun points, not where your mouse aim is.
 - **Motion blur** - depth based camera motion blur (rotation and movement).
 
 Client side only. Works on any server.
@@ -21,11 +23,12 @@ Local build: Java 17 and `gradle build` (Gradle 8.5).
 ## Config
 
 `config/footagecam-client.toml` is created on first launch. Everything can be switched off or tuned
-(tilt amounts, sway intensity, camera smoothing, hand lag strength, blur strength).
+(tilt amounts, sway intensity, idle sway timing, camera smoothing, hand lag strength, gun aim, blur strength).
+Defaults match SP-Backrooms (tilt 7, smoothing 0.7). If you already have a config file, delete it once to get the new defaults.
 
 ## Notes
 
-- **TACZ guns:** TACZ fires bullets along your real aim, not along the lagging picture. While you hold a TACZ gun the camera follow, the yaw/pitch part of the sway and the hand lag are switched off so the gun always fires straight ahead of the camera (tilt stays). Config: `gun_aim.lockAimWhileHoldingGun`.
 - The camera follow means the picture lags behind where you really aim. Turn it off in the config if that bothers you.
+- TACZ shots: the real rotation is swapped for the gun direction for a moment each tick, only when a TACZ gun is in your main hand in first person. Switch it off with `gun_aim.bulletsFollowGun`.
 - Motion blur turns itself off when Iris or Oculus is installed.
 - License: GPL-3.0, see `LICENSE` and `NOTICE`.

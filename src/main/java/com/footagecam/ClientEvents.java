@@ -2,11 +2,14 @@ package com.footagecam;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -23,30 +26,37 @@ public final class ClientEvents {
             return;
         }
 
-        float dt = mc.isPaused() ? 0.0F : mc.getDeltaFrameTime();
+        // The shot-direction swap (see GunAim) must never leak into rendering.
+        GunAim.restore(player);
+
+        boolean paused = mc.isPaused();
+        float dt = paused ? 0.0F : mc.getDeltaFrameTime();
         float partialTick = (float) event.getPartialTick();
         ViewLag.frameId++;
 
-        float yaw = event.getYaw();
-        float pitch = event.getPitch();
+        float rawYaw = event.getYaw();
+        float rawPitch = event.getPitch();
+        float yaw = rawYaw;
+        float pitch = rawPitch;
         float roll = event.getRoll();
 
         boolean ownCamera = mc.getCameraEntity() == player;
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
 
-        // TACZ shoots along the real aim, so with a gun in hand the picture must not drift away from it.
-        boolean gunAimLock = ownCamera && Config.GUN_AIM_LOCK.get() && GunAim.isHoldingGun(player);
-
-        if (ownCamera && firstPerson && !gunAimLock) {
-            ViewLag.update(yaw, pitch, dt);
+        // 1. The picture follows the mouse a moment later, then the hands follow the picture.
+        if (ownCamera && firstPerson) {
+            ViewLag.update(rawYaw, rawPitch, dt);
             if (Config.ENABLE_SMOOTH.get()) {
                 yaw = ViewLag.camYaw();
                 pitch = ViewLag.camPitch();
             }
         } else {
-            // Also zeroes the hand offset, so camera, hands and bullets all point the same way.
-            ViewLag.snap(yaw, pitch);
+            ViewLag.snap(rawYaw, rawPitch);
         }
+
+        // 2. Sway on top of that (everything here moves the gun with the picture).
+        float swayYaw = 0.0F;
+        float swayPitch = 0.0F;
 
         if (ownCamera) {
             if (Config.ENABLE_ROLL.get()) {
@@ -58,12 +68,39 @@ public final class ClientEvents {
             if (Config.ENABLE_SHAKE.get()) {
                 CameraShake.update(player, dt);
                 float k = Config.SHAKE_INTENSITY.get().floatValue();
-                if (!gunAimLock) {
-                    pitch += CameraShake.pitch * k;
-                    yaw += CameraShake.yaw * k;
-                }
+                swayPitch += CameraShake.pitch * k;
+                swayYaw += CameraShake.yaw * k;
                 roll += CameraShake.roll * k;
             }
+
+            if (Config.ENABLE_IDLE_SWAY.get()) {
+                IdleSway.update(player, rawYaw, rawPitch, paused);
+                swayPitch += IdleSway.pitch;
+                swayYaw += IdleSway.yaw;
+            } else {
+                IdleSway.reset();
+            }
+
+            // SP-Backrooms doubles the pitch part of vanilla's walking view bob (5 -> 10 degrees),
+            // so the extra half is added here.
+            if (Config.EXTRA_BOB.get() && mc.options.bobView().get()) {
+                float walked = player.walkDist - player.walkDistO;
+                float f1 = -(player.walkDist + walked * partialTick);
+                float f2 = Mth.lerp(partialTick, player.oBob, player.bob);
+                swayPitch += Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2F) * f2) * 5.0F;
+            }
+        }
+
+        yaw += swayYaw;
+        pitch += swayPitch;
+
+        // 3. Where the front of the gun really points: the picture minus how far the gun trails it.
+        if (ownCamera && firstPerson && Config.BULLETS_FOLLOW_GUN.get() && GunAim.isHoldingGun(player)) {
+            boolean withSway = Config.GUN_AIM_INCLUDE_SWAY.get();
+            GunAim.record((withSway ? yaw : yaw - swayYaw) - ViewLag.handOffsetYaw(),
+                    (withSway ? pitch : pitch - swayPitch) - ViewLag.handOffsetPitch());
+        } else {
+            GunAim.invalidate();
         }
 
         event.setYaw(yaw);
@@ -71,14 +108,38 @@ public final class ClientEvents {
         event.setRoll(roll);
     }
 
-    /** Both hands share one pose stack, so the offset is applied the first time only. */
-    @SubscribeEvent
+    /**
+     * Both hands share one pose stack, so the offset is applied the first time only.
+     * Runs first: TACZ draws its guns in this event and then cancels it, so the offset has to be
+     * on the pose stack before TACZ reads it.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRenderHand(RenderHandEvent event) {
         if (!Config.ENABLE_HAND_LAG.get() || ViewLag.handAppliedFrame == ViewLag.frameId) {
             return;
         }
         ViewLag.handAppliedFrame = ViewLag.frameId;
         ViewLag.applyToHands(event.getPoseStack());
+    }
+
+    /** End of the local player's tick: right before its rotation goes out to the server. */
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (event.player == mc.player && mc.player != null) {
+            GunAim.swapIn(mc.player);
+        }
+    }
+
+    /** End of the client tick: the real rotation is back before anything else looks at it. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            GunAim.restore(Minecraft.getInstance().player);
+        }
     }
 
     @SubscribeEvent
@@ -90,6 +151,9 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        GunAim.restore(Minecraft.getInstance().player);
+        GunAim.reset();
+        IdleSway.reset();
         CameraRoll.reset();
         CameraShake.reset();
         ViewLag.reset();
