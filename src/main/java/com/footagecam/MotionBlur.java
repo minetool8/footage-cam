@@ -6,10 +6,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fml.ModList;
 import org.joml.Matrix4f;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Camera motion blur. The world is rendered, then every pixel is reprojected into the previous
@@ -26,6 +31,7 @@ final class MotionBlur {
     };
 
     private static PostChain chain;
+    private static List<PostPass> passes = new ArrayList<>();
     private static boolean failed;
     private static int width = -1;
     private static int height = -1;
@@ -50,6 +56,7 @@ final class MotionBlur {
             chain.close();
             chain = null;
         }
+        passes = new ArrayList<>();
         failed = false;
         width = -1;
         height = -1;
@@ -81,9 +88,9 @@ final class MotionBlur {
             float[] values = new float[16];
             reproject.get(values);
             for (int i = 0; i < 16; i++) {
-                chain.setUniform(MATRIX_UNIFORMS[i], values[i]);
+                setUniform(MATRIX_UNIFORMS[i], values[i]);
             }
-            chain.setUniform("Strength", Config.MOTION_BLUR_STRENGTH.get().floatValue());
+            setUniform("Strength", Config.MOTION_BLUR_STRENGTH.get().floatValue());
 
             RenderSystem.disableBlend();
             RenderSystem.disableDepthTest();
@@ -99,6 +106,28 @@ final class MotionBlur {
         hasPrevious = true;
     }
 
+    private static void setUniform(String name, float value) {
+        for (PostPass pass : passes) {
+            pass.getEffect().safeGetUniform(name).set(value);
+        }
+    }
+
+    /** PostChain keeps its passes in a private list; find it by type so no obfuscated name is needed. */
+    @SuppressWarnings("unchecked")
+    private static List<PostPass> findPasses(PostChain postChain) throws ReflectiveOperationException {
+        for (Field field : PostChain.class.getDeclaredFields()) {
+            if (!List.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            field.setAccessible(true);
+            Object value = field.get(postChain);
+            if (value instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof PostPass) {
+                return (List<PostPass>) list;
+            }
+        }
+        throw new NoSuchFieldException("PostChain pass list not found");
+    }
+
     private static boolean ensureChain(Minecraft mc) {
         if (failed) {
             return false;
@@ -107,6 +136,7 @@ final class MotionBlur {
         try {
             if (chain == null) {
                 chain = new PostChain(mc.getTextureManager(), mc.getResourceManager(), mc.getMainRenderTarget(), POST);
+                passes = findPasses(chain);
                 width = -1;
             }
             if (width != window.getWidth() || height != window.getHeight()) {
@@ -122,6 +152,7 @@ final class MotionBlur {
                 chain.close();
                 chain = null;
             }
+            passes = new ArrayList<>();
             return false;
         }
     }
