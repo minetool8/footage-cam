@@ -20,6 +20,8 @@ public final class Config {
     public static final ForgeConfigSpec.DoubleValue HAND_LAG_STRENGTH;
     public static final ForgeConfigSpec.DoubleValue HAND_LAG_SMOOTHING;
 
+    public static final ForgeConfigSpec.BooleanValue GUN_AIM_LOCK;
+
     public static final ForgeConfigSpec.BooleanValue MOTION_BLUR;
     public static final ForgeConfigSpec.DoubleValue MOTION_BLUR_STRENGTH;
 
@@ -57,6 +59,14 @@ public final class Config {
                 .defineInRange("strength", 1.0D, 0.0D, 4.0D);
         HAND_LAG_SMOOTHING = b.comment("0 = hands never lag, closer to 1 = hands take longer to catch up.")
                 .defineInRange("smoothing", 0.85D, 0.0D, 0.99D);
+        b.pop();
+
+        b.push("gun_aim");
+        GUN_AIM_LOCK = b.comment("While holding a TACZ gun, the picture and the hands stay exactly on your real aim,",
+                        "so bullets always leave the gun straight ahead of the camera.",
+                        "This turns off camera follow lag, the yaw/pitch part of the sway and hand lag for guns.",
+                        "Tilt (roll) stays on, it does not change where the gun points.")
+                .define("lockAimWhileHoldingGun", true);
         b.pop();
 
         b.push("motion_blur");

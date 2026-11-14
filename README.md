@@ -25,6 +25,7 @@ Local build: Java 17 and `gradle build` (Gradle 8.5).
 
 ## Notes
 
+- **TACZ guns:** TACZ fires bullets along your real aim, not along the lagging picture. While you hold a TACZ gun the camera follow, the yaw/pitch part of the sway and the hand lag are switched off so the gun always fires straight ahead of the camera (tilt stays). Config: `gun_aim.lockAimWhileHoldingGun`.
 - The camera follow means the picture lags behind where you really aim. Turn it off in the config if that bothers you.
 - Motion blur turns itself off when Iris or Oculus is installed.
 - License: GPL-3.0, see `LICENSE` and `NOTICE`.

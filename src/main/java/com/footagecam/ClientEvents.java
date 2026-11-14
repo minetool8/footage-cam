@@ -34,13 +34,17 @@ public final class ClientEvents {
         boolean ownCamera = mc.getCameraEntity() == player;
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
 
-        if (ownCamera && firstPerson) {
+        // TACZ shoots along the real aim, so with a gun in hand the picture must not drift away from it.
+        boolean gunAimLock = ownCamera && Config.GUN_AIM_LOCK.get() && GunAim.isHoldingGun(player);
+
+        if (ownCamera && firstPerson && !gunAimLock) {
             ViewLag.update(yaw, pitch, dt);
             if (Config.ENABLE_SMOOTH.get()) {
                 yaw = ViewLag.camYaw();
                 pitch = ViewLag.camPitch();
             }
         } else {
+            // Also zeroes the hand offset, so camera, hands and bullets all point the same way.
             ViewLag.snap(yaw, pitch);
         }
 
@@ -54,8 +58,10 @@ public final class ClientEvents {
             if (Config.ENABLE_SHAKE.get()) {
                 CameraShake.update(player, dt);
                 float k = Config.SHAKE_INTENSITY.get().floatValue();
-                pitch += CameraShake.pitch * k;
-                yaw += CameraShake.yaw * k;
+                if (!gunAimLock) {
+                    pitch += CameraShake.pitch * k;
+                    yaw += CameraShake.yaw * k;
+                }
                 roll += CameraShake.roll * k;
             }
         }
