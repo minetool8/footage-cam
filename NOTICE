@@ -1,0 +1,14 @@
+Footage Cam
+===========
+
+The camera behaviour in this mod (turn/strafe tilt, handheld sway, delayed camera follow and the
+reprojection based motion blur) is modelled on the camera system of "SP-Backrooms Revamped"
+by SpacePotato and Herr Chaos (https://www.youtube.com/@SpacePotatoee), which is published under
+the GNU General Public License / LGPL-3.0 (the jar ships GPL-3.0 text and declares LGPL-3.0-only).
+
+This is a rewrite for Forge 1.20.1 (the original is a Fabric mod built on Veil). No assets,
+textures or shaders were copied; the algorithms and tuning values were carried over.
+
+Because of that origin this project is released under the GNU General Public License v3.0
+(see LICENSE). If you share the mod, keep this notice, keep the license, and make the source
+available.
