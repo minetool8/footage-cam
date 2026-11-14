@@ -30,9 +30,9 @@ public final class Config {
         ENABLE_ROLL = b.comment("Tilt the camera when you turn and when you strafe.")
                 .define("enabled", true);
         LOOK_ROLL = b.comment("How much the camera tilts when you turn your head.")
-                .defineInRange("lookRollMultiplier", 7.0D, 0.0D, 30.0D);
+                .defineInRange("lookRollMultiplier", 4.0D, 0.0D, 30.0D);
         STRAFE_ROLL = b.comment("How much the camera tilts when you move sideways.")
-                .defineInRange("strafeRollMultiplier", 7.0D, 0.0D, 30.0D);
+                .defineInRange("strafeRollMultiplier", 4.0D, 0.0D, 30.0D);
         b.pop();
 
         b.push("camera_shake");
