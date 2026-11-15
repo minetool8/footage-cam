@@ -5,6 +5,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
+
+import java.lang.reflect.Method;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /**
@@ -30,6 +32,12 @@ final class GunAim {
     private static float savedYaw;
     private static float savedPitch;
 
+    // TACZ's own "how far are the sights up" value, looked up by reflection so TACZ is not needed to build.
+    private static boolean lookedUp;
+    private static Method fromLocalPlayer;
+    private static Method getAimingProgress;
+    private static float fallbackProgress;
+
     private GunAim() {}
 
     static boolean isHoldingGun(LocalPlayer player) {
@@ -39,6 +47,38 @@ final class GunAim {
         }
         ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
         return id != null && GUN_NAMESPACE.equals(id.getNamespace()) && GUN_PATH.equals(id.getPath());
+    }
+
+    /**
+     * 0..1: how far the player has the gun up to the sights. Uses TACZ's own value, and falls back to the
+     * right mouse button if that cannot be read.
+     */
+    static float aimingProgress(LocalPlayer player, float partialTick, float dt) {
+        if (!lookedUp) {
+            lookedUp = true;
+            try {
+                Class<?> operator = Class.forName("com.tacz.guns.api.client.gameplay.IClientPlayerGunOperator");
+                fromLocalPlayer = operator.getMethod("fromLocalPlayer", LocalPlayer.class);
+                getAimingProgress = operator.getMethod("getClientAimingProgress", float.class);
+            } catch (Throwable t) {
+                fromLocalPlayer = null;
+                getAimingProgress = null;
+            }
+        }
+        if (fromLocalPlayer != null) {
+            try {
+                Object operator = fromLocalPlayer.invoke(null, player);
+                Object progress = getAimingProgress.invoke(operator, partialTick);
+                if (progress instanceof Float f) {
+                    return Mth.clamp(f, 0.0F, 1.0F);
+                }
+            } catch (Throwable t) {
+                fromLocalPlayer = null;
+            }
+        }
+        boolean down = Minecraft.getInstance().options.keyUse.isDown();
+        fallbackProgress = (float) MathUtil.stepTowards(fallbackProgress, down ? 1.0D : 0.0D, 0.2D * dt);
+        return fallbackProgress;
     }
 
     /** Called every frame with the direction the gun barrel points in (degrees). */

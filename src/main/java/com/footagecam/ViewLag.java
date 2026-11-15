@@ -18,6 +18,9 @@ final class ViewLag {
     private static float handYaw;
     private static float handPitch;
 
+    /** 0..1, how far the player is aiming down the sights of a gun (set every frame). */
+    static float ads;
+
     /** Counts rendered frames so the hand offset is applied once per frame. */
     static long frameId;
     static long handAppliedFrame = -1L;
@@ -26,6 +29,7 @@ final class ViewLag {
 
     static void reset() {
         initialised = false;
+        ads = 0.0F;
     }
 
     static void snap(float yaw, float pitch) {
@@ -40,7 +44,8 @@ final class ViewLag {
         }
 
         if (Config.ENABLE_SMOOTH.get()) {
-            float a = amount(Config.SMOOTHING.get().floatValue(), dt);
+            float smoothing = Config.SMOOTHING.get().floatValue() * (1.0F - ads * (1.0F - Config.ADS_SMOOTHING_MULT.get().floatValue()));
+            float a = amount(smoothing, dt);
             camYaw += Mth.wrapDegrees(targetYaw - camYaw) * a;
             camPitch += (targetPitch - camPitch) * a;
         } else {
@@ -66,15 +71,20 @@ final class ViewLag {
         return camPitch;
     }
 
+    /** Hand lag left over while aiming down the sights (1 = all of it, 0 = gun stays centred). */
+    private static float handScale() {
+        return 1.0F - ads * (1.0F - Config.ADS_HAND_LAG.get().floatValue());
+    }
+
     /** How far (degrees) the hands trail the camera sideways. Positive = hands are turned left of the camera. */
     static float handOffsetYaw() {
-        float strength = Config.HAND_LAG_STRENGTH.get().floatValue();
+        float strength = Config.HAND_LAG_STRENGTH.get().floatValue() * handScale();
         return Mth.clamp(Mth.wrapDegrees(camYaw - handYaw) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
     }
 
     /** How far (degrees) the hands trail the camera up/down. Positive = hands are turned up from the camera. */
     static float handOffsetPitch() {
-        float strength = Config.HAND_LAG_STRENGTH.get().floatValue();
+        float strength = Config.HAND_LAG_STRENGTH.get().floatValue() * handScale();
         return Mth.clamp((camPitch - handPitch) * strength, -MAX_HAND_OFFSET, MAX_HAND_OFFSET);
     }
 

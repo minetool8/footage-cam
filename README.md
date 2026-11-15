@@ -8,6 +8,7 @@ Found-footage style first person camera, taken from SP-Backrooms Revamped and re
 - **Idle sway** - slow cinematic sway while you stand still (like Camera Overhaul), fades out when you move.
 - **Hand lag** - hands, held items and TACZ guns trail behind the camera and catch up a moment later.
 - **TACZ shots follow the gun** - while holding a TACZ gun, bullets leave where the front of the (delayed) gun points, not where your mouse aim is.
+- **Aim down sights** - when you aim a TACZ gun (right click) the gun stays in the middle of the screen and the sway, tilt and camera delay are toned down, so you can still hit things. It blends in and out as the gun comes up.
 - **Motion blur** - depth based camera motion blur (rotation and movement).
 
 Client side only. Works on any server.
@@ -30,5 +31,6 @@ Defaults match SP-Backrooms (tilt 7, smoothing 0.7). If you already have a confi
 
 - The camera follow means the picture lags behind where you really aim. Turn it off in the config if that bothers you.
 - TACZ shots: the real rotation is swapped for the gun direction for a moment each tick, only when a TACZ gun is in your main hand in first person. Switch it off with `gun_aim.bulletsFollowGun`.
+- Aiming: tune it in the `aim_down_sights` config section (gun centring, sway, tilt, camera delay).
 - Motion blur turns itself off when Iris or Oculus is installed.
 - License: GPL-3.0, see `LICENSE` and `NOTICE`.

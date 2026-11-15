@@ -15,7 +15,17 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = FootageCam.MODID, value = Dist.CLIENT)
 public final class ClientEvents {
+    /** Latest world FOV (including TACZ's scope zoom), used to calm the sway down when zoomed in. */
+    private static double lastFov = -1.0D;
+
     private ClientEvents() {}
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        if (event.usedConfiguredFov()) {
+            lastFov = event.getFOV();
+        }
+    }
 
     /** Runs once per rendered frame, right before the world is drawn. */
     @SubscribeEvent
@@ -43,6 +53,20 @@ public final class ClientEvents {
         boolean ownCamera = mc.getCameraEntity() == player;
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
 
+        // Aiming down the sights: how far the gun is up (0..1). Everything below blends with this.
+        boolean holdingGun = ownCamera && firstPerson && GunAim.isHoldingGun(player);
+        float ads = 0.0F;
+        if (holdingGun && Config.ADS_ENABLED.get()) {
+            ads = GunAim.aimingProgress(player, partialTick, dt);
+        }
+        ViewLag.ads = ads;
+        float swayScale = 1.0F - ads * (1.0F - Config.ADS_SWAY.get().floatValue());
+        float tiltScale = 1.0F - ads * (1.0F - Config.ADS_TILT.get().floatValue());
+        if (ads > 0.0F && Config.ADS_ZOOM_SCALE.get() && lastFov > 0.0D) {
+            float zoom = Mth.clamp((float) (lastFov / mc.options.fov().get()), 0.1F, 1.0F);
+            swayScale *= 1.0F - ads * (1.0F - zoom);
+        }
+
         // 1. The picture follows the mouse a moment later, then the hands follow the picture.
         if (ownCamera && firstPerson) {
             ViewLag.update(rawYaw, rawPitch, dt);
@@ -60,7 +84,7 @@ public final class ClientEvents {
 
         if (ownCamera) {
             if (Config.ENABLE_ROLL.get()) {
-                roll += CameraRoll.update(player, partialTick, dt);
+                roll += CameraRoll.update(player, partialTick, dt) * tiltScale;
             } else {
                 CameraRoll.reset();
             }
@@ -68,15 +92,15 @@ public final class ClientEvents {
             if (Config.ENABLE_SHAKE.get()) {
                 CameraShake.update(player, dt);
                 float k = Config.SHAKE_INTENSITY.get().floatValue();
-                swayPitch += CameraShake.pitch * k;
-                swayYaw += CameraShake.yaw * k;
-                roll += CameraShake.roll * k;
+                swayPitch += CameraShake.pitch * k * swayScale;
+                swayYaw += CameraShake.yaw * k * swayScale;
+                roll += CameraShake.roll * k * swayScale;
             }
 
             if (Config.ENABLE_IDLE_SWAY.get()) {
                 IdleSway.update(player, rawYaw, rawPitch, paused);
-                swayPitch += IdleSway.pitch;
-                swayYaw += IdleSway.yaw;
+                swayPitch += IdleSway.pitch * swayScale;
+                swayYaw += IdleSway.yaw * swayScale;
             } else {
                 IdleSway.reset();
             }
@@ -87,7 +111,7 @@ public final class ClientEvents {
                 float walked = player.walkDist - player.walkDistO;
                 float f1 = -(player.walkDist + walked * partialTick);
                 float f2 = Mth.lerp(partialTick, player.oBob, player.bob);
-                swayPitch += Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2F) * f2) * 5.0F;
+                swayPitch += Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2F) * f2) * 5.0F * swayScale;
             }
         }
 
@@ -95,7 +119,7 @@ public final class ClientEvents {
         pitch += swayPitch;
 
         // 3. Where the front of the gun really points: the picture minus how far the gun trails it.
-        if (ownCamera && firstPerson && Config.BULLETS_FOLLOW_GUN.get() && GunAim.isHoldingGun(player)) {
+        if (holdingGun && Config.BULLETS_FOLLOW_GUN.get()) {
             boolean withSway = Config.GUN_AIM_INCLUDE_SWAY.get();
             GunAim.record((withSway ? yaw : yaw - swayYaw) - ViewLag.handOffsetYaw(),
                     (withSway ? pitch : pitch - swayPitch) - ViewLag.handOffsetPitch());

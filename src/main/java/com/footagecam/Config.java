@@ -29,6 +29,13 @@ public final class Config {
     public static final ForgeConfigSpec.DoubleValue HAND_LAG_STRENGTH;
     public static final ForgeConfigSpec.DoubleValue HAND_LAG_SMOOTHING;
 
+    public static final ForgeConfigSpec.BooleanValue ADS_ENABLED;
+    public static final ForgeConfigSpec.DoubleValue ADS_HAND_LAG;
+    public static final ForgeConfigSpec.DoubleValue ADS_SWAY;
+    public static final ForgeConfigSpec.DoubleValue ADS_TILT;
+    public static final ForgeConfigSpec.DoubleValue ADS_SMOOTHING_MULT;
+    public static final ForgeConfigSpec.BooleanValue ADS_ZOOM_SCALE;
+
     public static final ForgeConfigSpec.BooleanValue BULLETS_FOLLOW_GUN;
     public static final ForgeConfigSpec.BooleanValue GUN_AIM_INCLUDE_SWAY;
 
@@ -93,6 +100,26 @@ public final class Config {
                 .defineInRange("strength", 1.0D, 0.0D, 4.0D);
         HAND_LAG_SMOOTHING = b.comment("0 = hands never lag, closer to 1 = hands take longer to catch up.")
                 .defineInRange("smoothing", 0.85D, 0.0D, 0.99D);
+        b.pop();
+
+        b.push("aim_down_sights");
+        ADS_ENABLED = b.comment("While aiming a TACZ gun (right click), the gun stays in the middle of the screen and",
+                        "the camera calms down, so you can actually hit things. Everything below blends in smoothly",
+                        "as the gun comes up and blends back out when you lower it.")
+                .define("enabled", true);
+        ADS_HAND_LAG = b.comment("How much of the hand lag is left while aiming. 0 = gun stays exactly in the middle.")
+                .defineInRange("handLagMultiplier", 0.0D, 0.0D, 1.0D);
+        ADS_SWAY = b.comment("How much of the camera sway/shake is left while aiming. 1 = full, 0 = none.",
+                        "The camera still moves, just less.")
+                .defineInRange("swayMultiplier", 0.35D, 0.0D, 1.0D);
+        ADS_TILT = b.comment("How much of the turn/strafe tilt is left while aiming.")
+                .defineInRange("tiltMultiplier", 0.3D, 0.0D, 1.0D);
+        ADS_SMOOTHING_MULT = b.comment("Camera follow delay while aiming, as a fraction of the normal delay.",
+                        "Lower = the picture keeps up with your mouse better when you aim.")
+                .defineInRange("cameraDelayMultiplier", 0.5D, 0.0D, 1.0D);
+        ADS_ZOOM_SCALE = b.comment("Scale the sway down further when the scope zooms in, so a 4x scope does not look",
+                        "4x as shaky. The size of the wobble on screen then stays about the same.")
+                .define("scaleSwayWithZoom", true);
         b.pop();
 
         b.push("gun_aim");
