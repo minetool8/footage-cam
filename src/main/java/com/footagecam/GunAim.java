@@ -1,13 +1,18 @@
 package com.footagecam;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.lang.reflect.Method;
-import net.minecraftforge.registries.ForgeRegistries;
+import java.util.function.Consumer;
 
 /**
  * Makes TACZ shots leave where the front of the (delayed) gun points.
@@ -37,6 +42,10 @@ final class GunAim {
     private static Method fromLocalPlayer;
     private static Method getAimingProgress;
     private static float fallbackProgress;
+
+    // Hook on TACZ's client-side "gun is about to shoot" event (looked up by reflection).
+    private static boolean shotHookTried;
+    private static Method shooterGetter;
 
     private GunAim() {}
 
@@ -79,6 +88,57 @@ final class GunAim {
         boolean down = Minecraft.getInstance().options.keyUse.isDown();
         fallbackProgress = (float) MathUtil.stepTowards(fallbackProgress, down ? 1.0D : 0.0D, 0.2D * dt);
         return fallbackProgress;
+    }
+
+    /**
+     * Registers (once) a listener on TACZ's GunShootEvent. TACZ posts it on the client right before it sends the
+     * shot to the server, which is the moment the server needs the fresh gun direction.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void ensureShotHook() {
+        if (shotHookTried) {
+            return;
+        }
+        shotHookTried = true;
+        try {
+            Class<?> eventClass = Class.forName("com.tacz.guns.api.event.common.GunShootEvent");
+            shooterGetter = eventClass.getMethod("getShooter");
+            MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, (Class) eventClass,
+                    (Consumer) GunAim::onGunShoot);
+        } catch (Throwable t) {
+            shooterGetter = null;
+        }
+    }
+
+    /**
+     * The rotation the server holds is up to a whole tick (50 ms) old when the shot arrives, which makes shots
+     * miss while the gun is moving. So the current gun direction is sent right now, ahead of TACZ's shot message
+     * (both travel on the same connection, in order).
+     */
+    private static void onGunShoot(Object event) {
+        Minecraft mc = Minecraft.getInstance();
+        // The integrated server posts the same event from its own thread, only the client one counts.
+        if (!mc.isSameThread()) {
+            return;
+        }
+        LocalPlayer player = mc.player;
+        ClientPacketListener connection = mc.getConnection();
+        if (player == null || connection == null || !valid || !Config.BULLETS_FOLLOW_GUN.get()) {
+            return;
+        }
+        try {
+            if (shooterGetter == null || shooterGetter.invoke(event) != player) {
+                return;
+            }
+        } catch (Throwable t) {
+            return;
+        }
+        if (mc.getCameraEntity() != player || !mc.options.getCameraType().isFirstPerson() || !isHoldingGun(player)) {
+            return;
+        }
+        float base = player.getYRot();
+        connection.send(new ServerboundMovePlayerPacket.Rot(base + Mth.wrapDegrees(gunYaw - base),
+                Mth.clamp(gunPitch, -90.0F, 90.0F), player.onGround()));
     }
 
     /** Called every frame with the direction the gun barrel points in (degrees). */

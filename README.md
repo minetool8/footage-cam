@@ -30,7 +30,7 @@ Defaults match SP-Backrooms (tilt 7, smoothing 0.7). If you already have a confi
 ## Notes
 
 - The camera follow means the picture lags behind where you really aim. Turn it off in the config if that bothers you.
-- TACZ shots: the real rotation is swapped for the gun direction for a moment each tick, only when a TACZ gun is in your main hand in first person. Switch it off with `gun_aim.bulletsFollowGun`.
+- TACZ shots: the real rotation is swapped for the gun direction for a moment each tick, only when a TACZ gun is in your main hand in first person. The gun direction is also sent at the exact moment TACZ fires, so the server does not use a rotation that is up to one tick old. Switch it off with `gun_aim.bulletsFollowGun`.
 - Aiming: tune it in the `aim_down_sights` config section (gun centring, sway, tilt, camera delay).
 - Motion blur turns itself off when Iris or Oculus is installed.
 - License: GPL-3.0, see `LICENSE` and `NOTICE`.

@@ -55,6 +55,9 @@ public final class ClientEvents {
 
         // Aiming down the sights: how far the gun is up (0..1). Everything below blends with this.
         boolean holdingGun = ownCamera && firstPerson && GunAim.isHoldingGun(player);
+        if (holdingGun) {
+            GunAim.ensureShotHook();
+        }
         float ads = 0.0F;
         if (holdingGun && Config.ADS_ENABLED.get()) {
             ads = GunAim.aimingProgress(player, partialTick, dt);
