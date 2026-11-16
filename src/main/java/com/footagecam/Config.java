@@ -20,6 +20,8 @@ public final class Config {
     public static final ForgeConfigSpec.DoubleValue IDLE_SWAY_FADE_IN;
     public static final ForgeConfigSpec.DoubleValue IDLE_SWAY_FADE_OUT;
 
+    public static final ForgeConfigSpec.BooleanValue STOP_SWAY_IN_CONTAINERS;
+
     public static final ForgeConfigSpec.BooleanValue EXTRA_BOB;
 
     public static final ForgeConfigSpec.BooleanValue ENABLE_SMOOTH;
@@ -48,27 +50,27 @@ public final class Config {
         b.push("camera_roll");
         ENABLE_ROLL = b.comment("Tilt the camera when you turn and when you strafe.")
                 .define("enabled", true);
-        LOOK_ROLL = b.comment("How much the camera tilts when you turn your head. (SP-Backrooms default: 7)")
-                .defineInRange("lookRollMultiplier", 7.0D, 0.0D, 30.0D);
-        STRAFE_ROLL = b.comment("How much the camera tilts when you move sideways. (SP-Backrooms default: 7)")
-                .defineInRange("strafeRollMultiplier", 7.0D, 0.0D, 30.0D);
+        LOOK_ROLL = b.comment("How much the camera tilts when you turn your head. (SP-Backrooms default: 7, halved here)")
+                .defineInRange("lookRollMultiplier", 3.5D, 0.0D, 30.0D);
+        STRAFE_ROLL = b.comment("How much the camera tilts when you move sideways. (SP-Backrooms default: 7, halved here)")
+                .defineInRange("strafeRollMultiplier", 3.5D, 0.0D, 30.0D);
         b.pop();
 
         b.push("camera_shake");
-        ENABLE_SHAKE = b.comment("Constant handheld sway that gets a bit stronger while moving.")
+        ENABLE_SHAKE = b.comment("Handheld shake while walking and running. There is none while standing still.")
                 .define("enabled", true);
         SHAKE_INTENSITY = b.comment("Multiplier for the sway. 1.0 = default, 0 = none.")
                 .defineInRange("intensity", 1.0D, 0.0D, 5.0D);
         b.pop();
 
         b.push("idle_sway");
-        ENABLE_IDLE_SWAY = b.comment("Slow cinematic camera sway while you stand still (Camera Overhaul style).",
+        ENABLE_IDLE_SWAY = b.comment("Very slow, very small camera sway while you stand still (Camera Overhaul style).",
                         "It fades out as soon as you move or turn.")
                 .define("enabled", true);
-        IDLE_SWAY_INTENSITY = b.comment("Sway size in degrees. Camera Overhaul default: 0.6")
-                .defineInRange("intensity", 0.6D, 0.0D, 5.0D);
-        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16")
-                .defineInRange("frequency", 0.16D, 0.0D, 2.0D);
+        IDLE_SWAY_INTENSITY = b.comment("Sway size in degrees. Camera Overhaul default: 0.6, here a lot smaller.")
+                .defineInRange("intensity", 0.2D, 0.0D, 5.0D);
+        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16, here half of that.")
+                .defineInRange("frequency", 0.08D, 0.0D, 2.0D);
         IDLE_SWAY_DELAY = b.comment("Seconds you must stand still before the sway starts.",
                         "Camera Overhaul default is 0.15, here it is shorter so it feels instant.")
                 .defineInRange("startDelaySeconds", 0.05D, 0.01D, 10.0D);
@@ -77,6 +79,12 @@ public final class Config {
                 .defineInRange("fadeInSeconds", 0.1D, 0.0D, 30.0D);
         IDLE_SWAY_FADE_OUT = b.comment("Seconds the sway takes to disappear when you start moving.")
                 .defineInRange("fadeOutSeconds", 0.1D, 0.0D, 30.0D);
+        b.pop();
+
+        b.push("menus");
+        STOP_SWAY_IN_CONTAINERS = b.comment("All camera sway, shake and tilt fade out while an inventory, chest or any other",
+                        "container screen is open, and fade back in when it closes.")
+                .define("stopSwayInContainers", true);
         b.pop();
 
         b.push("camera_bob");

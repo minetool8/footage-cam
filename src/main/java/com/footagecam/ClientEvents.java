@@ -1,6 +1,7 @@
 package com.footagecam;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -17,6 +18,9 @@ import net.minecraftforge.fml.common.Mod;
 public final class ClientEvents {
     /** Latest world FOV (including TACZ's scope zoom), used to calm the sway down when zoomed in. */
     private static double lastFov = -1.0D;
+
+    /** 0..1, how far the sway has faded out because a container screen is open. */
+    private static float menuFade;
 
     private ClientEvents() {}
 
@@ -69,6 +73,12 @@ public final class ClientEvents {
             float zoom = Mth.clamp((float) (lastFov / mc.options.fov().get()), 0.1F, 1.0F);
             swayScale *= 1.0F - ads * (1.0F - zoom);
         }
+
+        // Inventory, chests and other containers: all sway fades out and comes back when it closes.
+        boolean containerOpen = Config.STOP_SWAY_IN_CONTAINERS.get() && mc.screen instanceof AbstractContainerScreen<?>;
+        menuFade = (float) MathUtil.stepTowards(menuFade, containerOpen ? 1.0D : 0.0D, dt / 4.0F);
+        swayScale *= 1.0F - menuFade;
+        tiltScale *= 1.0F - menuFade;
 
         // 1. The picture follows the mouse a moment later, then the hands follow the picture.
         if (ownCamera && firstPerson) {
@@ -180,6 +190,7 @@ public final class ClientEvents {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         GunAim.restore(Minecraft.getInstance().player);
         GunAim.reset();
+        menuFade = 0.0F;
         IdleSway.reset();
         CameraRoll.reset();
         CameraShake.reset();

@@ -2,10 +2,11 @@
 
 Found-footage style first person camera, taken from SP-Backrooms Revamped and reduced to just the camera:
 
-- **Tilt** - the camera rolls when you turn your head and when you strafe.
-- **Sway** - constant handheld wobble that gets stronger and faster while you move.
+- **Tilt** - the camera rolls when you turn your head and when you strafe (half of the SP-Backrooms amount).
+- **Shake** - handheld wobble while you walk and run (same as SP-Backrooms). None while standing still.
 - **Camera follow** - the picture trails your mouse a little and catches up.
-- **Idle sway** - slow cinematic sway while you stand still (like Camera Overhaul), fades out when you move.
+- **Idle sway** - very slow, very small cinematic sway while you stand still (like Camera Overhaul), fades out when you move.
+- **Menus** - all sway, shake and tilt fade out while an inventory, chest or any container is open.
 - **Hand lag** - hands, held items and TACZ guns trail behind the camera and catch up a moment later.
 - **TACZ shots follow the gun** - while holding a TACZ gun, bullets leave where the front of the (delayed) gun points, not where your mouse aim is.
 - **Aim down sights** - when you aim a TACZ gun (right click) the gun stays in the middle of the screen and the sway, tilt and camera delay are toned down, so you can still hit things. It blends in and out as the gun comes up.
@@ -25,7 +26,7 @@ Local build: Java 17 and `gradle build` (Gradle 8.5).
 
 `config/footagecam-client.toml` is created on first launch. Everything can be switched off or tuned
 (tilt amounts, sway intensity, idle sway timing, camera smoothing, hand lag strength, gun aim, blur strength).
-Defaults match SP-Backrooms (tilt 7, smoothing 0.7). If you already have a config file, delete it once to get the new defaults.
+Defaults: tilt 3.5 (SP-Backrooms uses 7), smoothing 0.7. If you already have a config file, delete it once to get the new defaults.
 
 ## Notes
 
