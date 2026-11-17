@@ -41,7 +41,8 @@ final class CameraShake {
         double floor = 0.5D * moving;
         double traumaGoal = Mth.clamp(0.6D * speed, floor, 1.5D);
         double noiseSpeedGoal = Mth.clamp(0.25D * speed, 0.1D, 1.0D);
-        double amplitude = 4.0D;
+        // SP-Backrooms uses 4 degrees; 35% softer here.
+        double amplitude = 4.0D * 0.65D;
 
         // Fades out a little faster once the player has stopped.
         float traumaSmoothing = moving <= 0.0D ? 0.80F : 0.93F;

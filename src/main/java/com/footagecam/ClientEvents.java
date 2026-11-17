@@ -111,7 +111,7 @@ public final class ClientEvents {
             }
 
             if (Config.ENABLE_IDLE_SWAY.get()) {
-                IdleSway.update(player, rawYaw, rawPitch, paused);
+                IdleSway.update(player, paused);
                 swayPitch += IdleSway.pitch * swayScale;
                 swayYaw += IdleSway.yaw * swayScale;
             } else {

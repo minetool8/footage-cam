@@ -57,7 +57,8 @@ public final class Config {
         b.pop();
 
         b.push("camera_shake");
-        ENABLE_SHAKE = b.comment("Handheld shake while walking and running. There is none while standing still.")
+        ENABLE_SHAKE = b.comment("Handheld shake while walking and running (35% softer than SP-Backrooms).",
+                        "There is none while standing still.")
                 .define("enabled", true);
         SHAKE_INTENSITY = b.comment("Multiplier for the sway. 1.0 = default, 0 = none.")
                 .defineInRange("intensity", 1.0D, 0.0D, 5.0D);
@@ -67,10 +68,10 @@ public final class Config {
         ENABLE_IDLE_SWAY = b.comment("Very slow, very small camera sway while you stand still (Camera Overhaul style).",
                         "It fades out as soon as you move or turn.")
                 .define("enabled", true);
-        IDLE_SWAY_INTENSITY = b.comment("Sway size in degrees. Camera Overhaul default: 0.6, here a lot smaller.")
-                .defineInRange("intensity", 0.2D, 0.0D, 5.0D);
-        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16, here half of that.")
-                .defineInRange("frequency", 0.08D, 0.0D, 2.0D);
+        IDLE_SWAY_INTENSITY = b.comment("Sway size in degrees. Camera Overhaul default: 0.6")
+                .defineInRange("swayDegrees", 0.6D, 0.0D, 5.0D);
+        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16, here a bit slower.")
+                .defineInRange("swaySpeed", 0.12D, 0.0D, 2.0D);
         IDLE_SWAY_DELAY = b.comment("Seconds you must stand still before the sway starts.",
                         "Camera Overhaul default is 0.15, here it is shorter so it feels instant.")
                 .defineInRange("startDelaySeconds", 0.05D, 0.01D, 10.0D);

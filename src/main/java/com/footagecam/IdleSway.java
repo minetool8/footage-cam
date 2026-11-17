@@ -21,9 +21,6 @@ final class IdleSway {
     private static double target;
     private static float prevYaw;
     private static float prevPitch;
-    private static double prevVx;
-    private static double prevVy;
-    private static double prevVz;
 
     /** Offsets in degrees, valid after {@link #update}. */
     static float pitch;
@@ -40,10 +37,10 @@ final class IdleSway {
     }
 
     /**
-     * @param rawYaw   the real (unsmoothed) camera yaw, used to notice that the player turned
-     * @param rawPitch the real (unsmoothed) camera pitch
+     * Idle means: standing on the ground, no movement keys, not moving, not riding and not turning.
+     * This looks at the player itself, not at the camera angles, because other mods change those every frame.
      */
-    static void update(LocalPlayer player, float rawYaw, float rawPitch, boolean paused) {
+    static void update(LocalPlayer player, boolean paused) {
         long now = System.nanoTime();
         double dt = 0.0D;
         if (initialised && !paused) {
@@ -52,30 +49,29 @@ final class IdleSway {
         lastNanos = now;
         time += dt;
 
-        Vec3 v = player.getDeltaMovement();
+        float playerYaw = player.getYRot();
+        float playerPitch = player.getXRot();
         if (!initialised) {
-            prevYaw = rawYaw;
-            prevPitch = rawPitch;
-            prevVx = v.x;
-            prevVy = v.y;
-            prevVz = v.z;
+            prevYaw = playerYaw;
+            prevPitch = playerPitch;
             lastActionTime = time;
             initialised = true;
         }
 
-        boolean acted = Math.abs(v.x - prevVx) > EPS
-                || Math.abs(v.y - prevVy) > EPS
-                || Math.abs(v.z - prevVz) > EPS
-                || Math.abs(Mth.wrapDegrees(rawYaw - prevYaw)) > 1.0E-4F
-                || Math.abs(rawPitch - prevPitch) > 1.0E-4F;
+        Vec3 v = player.getDeltaMovement();
+        boolean keys = player.input != null
+                && (player.input.forwardImpulse != 0.0F || player.input.leftImpulse != 0.0F || player.input.jumping);
+        boolean acted = keys
+                || player.isPassenger()
+                || !player.onGround()
+                || v.x * v.x + v.z * v.z > 1.0E-6D
+                || Math.abs(Mth.wrapDegrees(playerYaw - prevYaw)) > 1.0E-3F
+                || Math.abs(playerPitch - prevPitch) > 1.0E-3F;
         if (acted) {
             lastActionTime = time;
         }
-        prevYaw = rawYaw;
-        prevPitch = rawPitch;
-        prevVx = v.x;
-        prevVy = v.y;
-        prevVz = v.z;
+        prevYaw = playerYaw;
+        prevPitch = playerPitch;
 
         // Same state machine as Camera Overhaul: after moving, fade out completely first,
         // then (once still for long enough) fade back in.
