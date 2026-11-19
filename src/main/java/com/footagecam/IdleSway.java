@@ -22,6 +22,8 @@ final class IdleSway {
     private static float prevYaw;
     private static float prevPitch;
 
+    private static String blocker = "none";
+
     /** Offsets in degrees, valid after {@link #update}. */
     static float pitch;
     static float yaw;
@@ -61,15 +63,16 @@ final class IdleSway {
         Vec3 v = player.getDeltaMovement();
         boolean keys = player.input != null
                 && (player.input.forwardImpulse != 0.0F || player.input.leftImpulse != 0.0F || player.input.jumping);
-        boolean acted = keys
-                || player.isPassenger()
-                || !player.onGround()
-                || v.x * v.x + v.z * v.z > 1.0E-6D
-                || Math.abs(Mth.wrapDegrees(playerYaw - prevYaw)) > 1.0E-3F
-                || Math.abs(playerPitch - prevPitch) > 1.0E-3F;
-        if (acted) {
+        boolean riding = player.isPassenger();
+        boolean inAir = !player.onGround();
+        boolean moving = v.x * v.x + v.z * v.z > 1.0E-6D;
+        boolean turning = Math.abs(Mth.wrapDegrees(playerYaw - prevYaw)) > 1.0E-2F
+                || Math.abs(playerPitch - prevPitch) > 1.0E-2F;
+        if (keys || riding || inAir || moving || turning) {
             lastActionTime = time;
         }
+        blocker = keys ? "movement keys" : riding ? "riding" : inAir ? "not on ground" : moving ? "moving"
+                : turning ? "turning" : "none";
         prevYaw = playerYaw;
         prevPitch = playerPitch;
 
@@ -89,5 +92,10 @@ final class IdleSway {
         float phase = (float) (time * Config.IDLE_SWAY_FREQUENCY.get());
         pitch = (float) (SimplexNoise.noise(phase, 420.0F) * intensity);
         yaw = (float) (SimplexNoise.noise(phase, 1337.0F) * intensity);
+    }
+
+    static String debugText() {
+        return String.format(java.util.Locale.ROOT, "Idle sway | blocked by: %s | strength %.2f | pitch %.2f yaw %.2f",
+                blocker, factor * factor * factor, pitch, yaw);
     }
 }

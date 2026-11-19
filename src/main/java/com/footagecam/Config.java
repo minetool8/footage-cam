@@ -19,6 +19,7 @@ public final class Config {
     public static final ForgeConfigSpec.DoubleValue IDLE_SWAY_DELAY;
     public static final ForgeConfigSpec.DoubleValue IDLE_SWAY_FADE_IN;
     public static final ForgeConfigSpec.DoubleValue IDLE_SWAY_FADE_OUT;
+    public static final ForgeConfigSpec.BooleanValue IDLE_SWAY_DEBUG;
 
     public static final ForgeConfigSpec.BooleanValue STOP_SWAY_IN_CONTAINERS;
 
@@ -68,10 +69,10 @@ public final class Config {
         ENABLE_IDLE_SWAY = b.comment("Very slow, very small camera sway while you stand still (Camera Overhaul style).",
                         "It fades out as soon as you move or turn.")
                 .define("enabled", true);
-        IDLE_SWAY_INTENSITY = b.comment("Sway size in degrees. Camera Overhaul default: 0.6")
-                .defineInRange("swayDegrees", 0.6D, 0.0D, 5.0D);
-        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16, here a bit slower.")
-                .defineInRange("swaySpeed", 0.12D, 0.0D, 2.0D);
+        IDLE_SWAY_INTENSITY = b.comment("How far the camera drifts, in degrees. Camera Overhaul default: 0.6")
+                .defineInRange("amountDegrees", 0.9D, 0.0D, 5.0D);
+        IDLE_SWAY_FREQUENCY = b.comment("Sway speed. Camera Overhaul default: 0.16. Below about 0.15 it is too slow to notice.")
+                .defineInRange("speed", 0.3D, 0.0D, 2.0D);
         IDLE_SWAY_DELAY = b.comment("Seconds you must stand still before the sway starts.",
                         "Camera Overhaul default is 0.15, here it is shorter so it feels instant.")
                 .defineInRange("startDelaySeconds", 0.05D, 0.01D, 10.0D);
@@ -80,6 +81,8 @@ public final class Config {
                 .defineInRange("fadeInSeconds", 0.1D, 0.0D, 30.0D);
         IDLE_SWAY_FADE_OUT = b.comment("Seconds the sway takes to disappear when you start moving.")
                 .defineInRange("fadeOutSeconds", 0.1D, 0.0D, 30.0D);
+        IDLE_SWAY_DEBUG = b.comment("Shows on the action bar why the idle sway is running or what is blocking it.")
+                .define("debugOverlay", false);
         b.pop();
 
         b.push("menus");

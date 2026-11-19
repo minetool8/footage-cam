@@ -6,6 +6,7 @@ Found-footage style first person camera, taken from SP-Backrooms Revamped and re
 - **Shake** - handheld wobble while you walk and run (35% softer than SP-Backrooms). None while standing still.
 - **Camera follow** - the picture trails your mouse a little and catches up.
 - **Idle sway** - slow, small cinematic sway while you stand still (like Camera Overhaul), fades out when you move.
+- **Idle sway debugging** - set `idle_sway.debugOverlay = true` to see on the action bar what is blocking the sway.
 - **Menus** - all sway, shake and tilt fade out while an inventory, chest or any container is open.
 - **Hand lag** - hands, held items and TACZ guns trail behind the camera and catch up a moment later.
 - **TACZ shots follow the gun** - while holding a TACZ gun, bullets leave where the front of the (delayed) gun points, not where your mouse aim is.

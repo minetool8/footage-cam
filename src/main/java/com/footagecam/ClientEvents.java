@@ -3,6 +3,7 @@ package com.footagecam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -112,6 +113,9 @@ public final class ClientEvents {
 
             if (Config.ENABLE_IDLE_SWAY.get()) {
                 IdleSway.update(player, paused);
+                if (Config.IDLE_SWAY_DEBUG.get()) {
+                    player.displayClientMessage(Component.literal(IdleSway.debugText()), true);
+                }
                 swayPitch += IdleSway.pitch * swayScale;
                 swayYaw += IdleSway.yaw * swayScale;
             } else {
